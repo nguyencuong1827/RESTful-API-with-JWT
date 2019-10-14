@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
-
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+//router.get('/', userController.login_page);
+router.get('/',  function(req, res){
+    res.send('Welcome to project RESTful API with JWT');
 });
+
 
 module.exports = router;

@@ -1,0 +1,39 @@
+<!-- breadcrumbs -->
+<div class="breadcrumbs">
+	<div class="container">
+		<ol class="breadcrumb breadcrumb1 animated wow slideInLeft" data-wow-delay=".5s">
+			<li><a href="/"><span class="glyphicon glyphicon-home" aria-hidden="true"></span>Trang chủ</a></li>
+			<li class="active">Đăng nhập</li>
+		</ol>
+	</div>
+</div>
+<!-- //breadcrumbs -->
+<!-- login -->
+<div class="login">
+	<div class="container">
+		<h2>Đăng nhập</h2>
+
+		<div class="login-form-grids animated wow slideInUp" data-wow-delay=".5s">
+			{{#if success}}
+				<div class="alert alert-success">{{success}}</div>
+			{{/if}}
+			{{#if error}}
+				<div class="alert alert-danger">{{error}}</div>
+			{{/if}}
+
+
+			<form action="/user/login" method="POST">
+				<input id="username" type="text" placeholder="Tài khoản" required=" " name="username">
+				<input id="password" type="password" placeholder="Mật khẩu" required=" " name="password">
+				<div class="forgot">
+					<a href="/user/forgotPassword">Quên mật khẩu?</a>
+				</div>
+				<input type="submit" value="Login">
+			</form>
+		</div>
+		<h4>Dành cho thành viên mới</h4>
+		<p><a href="/register">Đăng ký!</a> (hoặc) trở lại <a href="/">Trang chủ<span
+					class="glyphicon glyphicon-menu-right" aria-hidden="true"></span></a></p>
+	</div>
+</div>
+<!-- //login -->
