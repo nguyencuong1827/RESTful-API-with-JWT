@@ -7,6 +7,7 @@ var logger = require('morgan');
 var bodyParser = require('body-parser');
 var passport = require('passport')
 var session = require('express-session');
+var dotenv = require('dotenv');
 
 var indexRouter = require('./routes/index');
 var userRouter = require('./routes/user');
@@ -19,6 +20,8 @@ require('./config/passport')(passport);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+dotenv.config();
+
 //Kết nối cơ sở dữ liệu
 var mongoose = require('mongoose');
 mongoose.Promise = Promise;
@@ -30,7 +33,7 @@ const option = {
   reconnectInterval: 3000
 };
 const run = async () => {
-  await mongoose.connect('mongodb+srv://nguyencuong1827:cuongkhtn1997@cluster0-jkuvm.mongodb.net/RESTful-API-with-JWT', option);
+  await mongoose.connect(process.env.DB_CONNECT, option);
 }
 run().catch(error => console.error(error));
 
@@ -43,7 +46,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/user', userRouter);
-
 // Express Session Middleware
 app.use(session({
   secret: 'keyboard cat',
@@ -51,8 +53,8 @@ app.use(session({
   saveUninitialized: true
 }));
 
-app.use(passport.initialize());
-app.use(passport.session());
+//app.use(passport.initialize());
+//app.use(passport.session());
 
 
 //parse application/x-www-form-urlencoded
