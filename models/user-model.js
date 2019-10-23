@@ -4,6 +4,14 @@ var Schema = mongoose.Schema;
 
 var user = new Schema({
   id: String,
+  fullName: {
+    type: String,
+    required: true
+  },
+  nickName: {
+    type: String,
+    required: true
+  },
   username: {
     type: String,
     required: true
@@ -11,6 +19,10 @@ var user = new Schema({
   password: {
     type: String,
     required: true
+  },
+  level: {
+    type: Number,
+    default: 0
   }
 }, { collection: 'users' });
 

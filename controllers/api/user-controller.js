@@ -2,18 +2,14 @@ const User = require("../../models/user-model"),
   passport = require("passport"),
   jwt = require("jsonwebtoken");
 
-var currentUser = null;
 //Login process
-
-const checkToken = (token, user) => {
-  
-}
-
 exports.user_login_process = (req, res, next) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  if(!username || !password){
-    return res.send('Vui lòng điền đầy đủ thông tin tài khoản');
+  const {username, password} = req.body;
+
+  if(!username || !password ){
+    return res.status(400).json({
+      message: "Vui lòng điền đủ thông tin"
+    });
   }
   passport.authenticate("local-login", { session: false }, (err, user, info) => {
       if (err || !user) {
@@ -23,7 +19,7 @@ exports.user_login_process = (req, res, next) => {
         });
       }
 
-      currentUser = user;
+      
       req.login(user, { session: false }, (err) => {
         if (err) {
           return res.send(err);
@@ -32,8 +28,8 @@ exports.user_login_process = (req, res, next) => {
         jwt
          res.header('auth-token', token);
          return res.json({
-           message: 'Đăng nhập thành công',
-           token
+           token,
+           user
           });
       });
     }
@@ -42,22 +38,31 @@ exports.user_login_process = (req, res, next) => {
 
 //Register process
 exports.user_register_process = async (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  if(!username || !password){
-    return res.send('Vui lòng điền đầy đủ thông tin tài khoản');
+  const {fullName, nickName ,username, password} = req.body;
+
+  if(!username || !password || !fullName || !nickName){
+    return res.status(400).json({
+      message: "Vui lòng điền đủ thông tin"
+    });
   }
+ 
   if (await User.checkUsername(username)) {
-    return res.send(`Tài khoản ${username} đã tồn tại`);
+    return res.status(400).json({
+      message: `Tài khoản ${username} đã tồn tại`
+    });
   }
 
   let newUser = new User.list({
+    fullName: fullName,
+    nickName: nickName,
     username: username,
-    password: password
+    password: password,
   });
 
   if (User.saveUser(newUser)) {
-    return res.send("Đăng ký thành công");
+    return res.status(200).json({
+      message: "Đăng ký thành công"
+    });
   }
 };
 
@@ -78,7 +83,10 @@ exports.user_info = (req, res, next) => {
     }
     else{
         return res.status(200).json({
-            user
+           fullName: user.fullName,
+           nickName: user.nickName,
+           username: user.username,
+           level: user.level
         });
     }
   })(req, res, next);
