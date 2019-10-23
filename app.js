@@ -38,7 +38,7 @@ const run = async () => {
 }
 run().catch(error => console.error(error));
 
-var whitelist = ['http://localhost:3000']
+var whitelist = ['http://localhost:3000', 'https://game-caro-viet-nam.herokuapp.com']
 var corsOptions = {
   origin: function (origin, callback) {
     if (whitelist.indexOf(origin) !== -1) {
