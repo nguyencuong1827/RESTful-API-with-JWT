@@ -10,4 +10,9 @@ router.post('/register', user_controller.user_register_process);
 router.post('/login' ,user_controller.user_login_process);
 
 router.get('/me', user_controller.user_info);
+
+router.put('/update', user_controller.update_info);
+
+router.put('/changePassword', user_controller.change_password);
+
 module.exports = router;

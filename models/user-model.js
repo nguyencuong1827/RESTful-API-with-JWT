@@ -20,9 +20,13 @@ var user = new Schema({
     type: String,
     required: true
   },
-  level: {
+  point: {
     type: Number,
     default: 0
+  },
+  rank: {
+    type: String,
+    default: 'Đồng'
   }
 }, { collection: 'users' });
 
@@ -58,13 +62,68 @@ const validPassword = async (username, password) => {
 const checkUsername = async (username) => {
   const user = await list.findOne({ 'username': username });
   if (!user)
-    return false;
+    return false; 
   return true;
 };
+
+const updateInfo = async (username ,fullName, nickName, res) => {
+  const query = {'username': username};
+  await list.findOneAndUpdate(query, 
+                              {$set: {fullName: fullName, nickName: nickName}}, 
+                              {upsert: true}, 
+                              function(err, doc){
+                                if(err){
+                                  return res.status(400).json({
+                                    error: err
+                                  });
+                                }
+                                return res.status(200).json({
+                                  message: 'Cập nhập thông tin thành công'
+                                });
+  });
+};
+
+const changePassword = async (username, password, newPassword, oldPassword, res) => {
+  const query = {'username': username};
+  const compare = await bcrypt.compare(oldPassword, password);
+  
+  if(!compare){
+    return res.status(400).json({
+      message: 'Mật khẩu cũ không chính xác'
+    });
+  }
+  
+  bcrypt.genSalt(10, function (err, salt) {
+      bcrypt.hash(newPassword, salt, async (err, hash) => {
+        if (err) {
+          return res.status(400).json({
+            error: err
+          });
+        }
+      await list.findOneAndUpdate(query, 
+        {$set: {password: hash}}, 
+        {upsert: true}, 
+        function(err, doc){
+          if(err){
+            return res.status(400).json({
+              error: err
+            });
+          }
+          return res.status(200).json({
+            message: 'Đổi mật khẩu thành công'
+          });
+      });
+    });
+  });
+};
+
+
 
 module.exports = {
   list: list,
   saveUser: saveUser,
   validPassword: validPassword,
-  checkUsername: checkUsername
+  checkUsername: checkUsername,
+  updateInfo: updateInfo,
+  changePassword: changePassword
 };

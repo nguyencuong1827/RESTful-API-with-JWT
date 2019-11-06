@@ -13,7 +13,10 @@ var indexRouter = require('./routes/index');
 var userRouter = require('./routes/user');
 var cors = require('cors');
 
+var io = require("socket.io")();
+
 var app = express();
+app.io = io;
 
 require('./config/passport')(passport);
 
@@ -48,6 +51,74 @@ run().catch(error => console.error(error));
 //     }
 //   }
 // }
+
+
+
+//Socket server
+var arrUserWait = [];
+var count = 0;
+app.io.on('connection', function(socket){
+  console.log(`Có người vừa truy cập: ${socket.id}`);
+  socket.on('disconnect', function(){
+    var index = arrUserWait.findIndex(function(item, i){
+      return item.id === socket.id;
+    });
+    arrUserWait.splice(index, 1);
+    console.log(`${socket.Username ? socket.Username : socket.id} vừa thoát`);
+    io.sockets.in(socket.RoomName).emit('server-send-have-user-quit');
+  });
+  socket.on('user-send-username-point', function(data){
+    socket.Username = data.Username;
+    socket.NickName = data.NickName;
+    socket.Point = data.Point;
+    socket.RoomName = data.Username;
+    socket.Rank = data.Rank;
+    console.log( socket.Username);
+    console.log("Điểm: "+socket.Point);
+
+    const length = arrUserWait.length;
+    if(length >= 1){
+        
+      socket.join(arrUserWait[length-1].RoomName);
+      socket.RoomName = arrUserWait[length-1].RoomName;
+      socket.YourTurn = 'O';
+      arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, YourTurn: socket.YourTurn});
+      io.sockets.in(socket.RoomName).emit('server-send-ready-play', 'Đã tạo phòng');
+      io.sockets.in(socket.RoomName).emit('server-send-info-user', arrUserWait);
+      arrUserWait = [];                       
+    }
+    else{
+      arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, YourTurn: 'X'});
+      socket.join(socket.RoomName);
+    }
+  });
+
+  socket.on('user-send-position-move', function(data){
+    socket.to(socket.RoomName).emit('server-send-position-move', data);
+    //io.sockets.in(socket.RoomName).emit('server-send-position-move', data); 
+  });
+  
+  socket.on('user-send-please-return', function(){
+    io.sockets.in(socket.RoomName).emit('server-send-please-return', socket.Username);
+  });
+  socket.on('user-send-allow', function(){
+    io.sockets.in(socket.RoomName).emit('server-send-allow'); 
+  });
+  socket.on('user-send-give-up', function(){
+    io.sockets.in(socket.RoomName).emit('server-send-give-up', {Username: socket.Username, NickName: socket.NickName});
+  });
+  
+  socket.on('user-send-message', function(data){
+    io.sockets.in(socket.RoomName).emit('server-send-message', {Username: socket.Username, Message: data});
+  });
+
+  socket.on('user-send-play-again', function(data){
+    console.log(data);
+    io.sockets.in(socket.RoomName).emit('server-send-play-again', socket.Username);
+  });
+
+
+});
 
 app.use(cors());
 app.use(logger('dev'));
