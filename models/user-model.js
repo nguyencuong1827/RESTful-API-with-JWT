@@ -27,6 +27,14 @@ var user = new Schema({
   rank: {
     type: String,
     default: 'Đồng'
+  },
+  numberNegativePoint:{
+    type: Number,
+    default: 0
+  },
+  urlAvatar: {
+    type: String,
+    default: ''
   }
 }, { collection: 'users' });
 
@@ -66,10 +74,17 @@ const checkUsername = async (username) => {
   return true;
 };
 
-const updateInfo = async (username ,fullName, nickName, res) => {
+const updateInfo = async (username ,fullName, nickName, urlAvatar,  res) => {
   const query = {'username': username};
+  let set;
+  if(urlAvatar === ''){
+    set = { fullName: fullName, nickName: nickName };
+  }
+  else{
+    set = { fullName: fullName, nickName: nickName, urlAvatar: urlAvatar };
+  }
   await list.findOneAndUpdate(query, 
-                              {$set: {fullName: fullName, nickName: nickName}}, 
+                              {$set: set}, 
                               {upsert: true}, 
                               function(err, doc){
                                 if(err){
@@ -117,6 +132,25 @@ const changePassword = async (username, password, newPassword, oldPassword, res)
   });
 };
 
+const updatePointAndRank = async (username, newRank, newPoint, newNumberNegativePoint, res) => {
+  const query = {'username': username};
+  let set;
+  set = { rank: newRank, point: newPoint, numberNegativePoint: newNumberNegativePoint };
+  await list.findOneAndUpdate(query, 
+                              {$set: set}, 
+                              {upsert: true}, 
+                              function(err, doc){
+                                if(err){
+                                  console.log(err);
+                                  return res.status(400).json({
+                                    error: err
+                                  });
+                                }
+                                return res.status(200).json({
+                                  message: 'Cập điểm và hạng thành công'
+                                });
+  });
+};
 
 
 module.exports = {
@@ -125,5 +159,6 @@ module.exports = {
   validPassword: validPassword,
   checkUsername: checkUsername,
   updateInfo: updateInfo,
-  changePassword: changePassword
+  changePassword: changePassword,
+  updatePointAndRank
 };

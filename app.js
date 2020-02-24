@@ -32,9 +32,10 @@ mongoose.Promise = Promise;
 const option = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  autoReconnect: true,
-  reconnectTries: 1000000,
-  reconnectInterval: 3000
+  // autoReconnect: true,
+  // reconnectTries: 1000000,
+  // reconnectInterval: 3000,
+  useFindAndModify: true
 };
 const run = async () => {
   await mongoose.connect(process.env.DB_CONNECT, option);
@@ -53,28 +54,62 @@ run().catch(error => console.error(error));
 // }
 
 
+function changeRankToNumber(rank){
+  switch(rank){
+      case 'Đồng':{
+          return 1;
+      }
+      case 'Bạc': {
+          return 2;
+      }
+      case 'Vàng': {
+          return 3;
+      }
+      case 'Bạch kim': {
+          return 4;
+      }
+      case 'Kim cương': {
+          return 5;
+      }
+      case 'Cao thủ': {
+          return 6;
+      }
+      case 'Đại cao thủ': {
+          return 7;
+      }
+      case 'Thách đấu': {
+          return 8;
+      }
+      default:{
+          return 0;
+      }
 
+  }
+}
 //Socket server
+var arrRanking = [];
 var arrUserWait = [];
 var count = 0;
 app.io.on('connection', function(socket){
   console.log(`Có người vừa truy cập: ${socket.id}`);
+  io.sockets.emit('server-send-array-ranking', arrRanking);
   socket.on('disconnect', function(){
     var index = arrUserWait.findIndex(function(item, i){
       return item.id === socket.id;
     });
     arrUserWait.splice(index, 1);
     console.log(`${socket.Username ? socket.Username : socket.id} vừa thoát`);
-    io.sockets.in(socket.RoomName).emit('server-send-have-user-quit');
+    io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn);
   });
-  socket.on('user-send-username-point', function(data){
+  socket.on('user-send-info', function(data){
     socket.Username = data.Username;
     socket.NickName = data.NickName;
     socket.Point = data.Point;
     socket.RoomName = data.Username;
     socket.Rank = data.Rank;
+    socket.urlAvatar = data.urlAvatar;
     console.log( socket.Username);
-    console.log("Điểm: "+socket.Point);
+    console.log("Điểm: " + socket.Point);
 
     const length = arrUserWait.length;
     if(length >= 1){
@@ -82,13 +117,14 @@ app.io.on('connection', function(socket){
       socket.join(arrUserWait[length-1].RoomName);
       socket.RoomName = arrUserWait[length-1].RoomName;
       socket.YourTurn = 'O';
-      arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, YourTurn: socket.YourTurn});
+      arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, urlAvatar: socket.urlAvatar, YourTurn: socket.YourTurn});
       io.sockets.in(socket.RoomName).emit('server-send-ready-play', 'Đã tạo phòng');
       io.sockets.in(socket.RoomName).emit('server-send-info-user', arrUserWait);
       arrUserWait = [];                       
     }
     else{
-      arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, YourTurn: 'X'});
+      socket.YourTurn = 'X';
+      arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, urlAvatar: socket.urlAvatar, YourTurn: socket.YourTurn});
       socket.join(socket.RoomName);
     }
   });
@@ -104,8 +140,12 @@ app.io.on('connection', function(socket){
   socket.on('user-send-allow', function(){
     io.sockets.in(socket.RoomName).emit('server-send-allow'); 
   });
+  socket.on('user-send-not-allow', function(){
+    io.sockets.in(socket.RoomName).emit('server-send-not-allow', socket.Username); 
+  });
   socket.on('user-send-give-up', function(){
-    io.sockets.in(socket.RoomName).emit('server-send-give-up', {Username: socket.Username, NickName: socket.NickName});
+    console.log(socket.YourTurn);
+    io.sockets.in(socket.RoomName).emit('server-send-give-up', {Username: socket.Username, NickName: socket.NickName, YourTurn: socket.YourTurn});
   });
   
   socket.on('user-send-message', function(data){
@@ -113,11 +153,43 @@ app.io.on('connection', function(socket){
   });
 
   socket.on('user-send-play-again', function(data){
-    console.log(data);
     io.sockets.in(socket.RoomName).emit('server-send-play-again', socket.Username);
   });
+  // Gửi điểm và hạng sau khi cập nhật
+  socket.on('user-send-point-and-rank', function(data){
+    console.log('Cập nhật điểm và hạng');
+    let flag = 0;
+    for(let i=0; i<arrRanking.length; i++){
+      if(arrRanking[i].username === data.username){
+        arrRanking[i] = data;
+        flag = 1;
+        break;
+      }
+    }
+    if(flag === 0){
+      arrRanking.push(data);
+    }
+    arrRanking.sort(function(a, b){
+      if(changeRankToNumber(a.rank) === changeRankToNumber(b.rank)){
+        return b.point - a.point;
+      }
+      return changeRankToNumber(b.rank) - changeRankToNumber(a.rank);
+    });
+    if(arrRanking.length > 10){
+      arrRanking.pop();
+    }
+    io.sockets.emit('server-send-array-ranking', arrRanking);
+    console.log('Bảng xếp hạng', data.username);
+    console.log(arrRanking.length);
+    // console.log(arrRanking);
 
-
+  });
+  socket.on('user-send-quit-room', function(){
+    console.log(socket.NickName, " đã thoát khỏi phòng ", socket.RoomName);
+    arrUserWait = [];
+    io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn); 
+    socket.leave(socket.RoomName);
+  });
 });
 
 app.use(cors());

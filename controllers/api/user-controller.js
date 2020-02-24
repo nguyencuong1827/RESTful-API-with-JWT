@@ -31,6 +31,7 @@ exports.user_login_process = (req, res, next) => {
           process.env.TOKEN_SECRET
         );
         jwt;
+
         res.header("auth-token", token);
         return res.json({
           token,
@@ -90,7 +91,9 @@ exports.user_info = (req, res, next) => {
         nickName: user.nickName,
         username: user.username,
         point: user.point,
-        rank: user.rank
+        rank: user.rank,
+        numberNegativePoint: user.numberNegativePoint,
+        urlAvatar: user.urlAvatar
       });
     }
   })(req, res, next);
@@ -110,13 +113,13 @@ exports.update_info = (req, res, next) => {
         message: info.message
       });
     } else {
-      const { fullName, nickName } = req.body;
+      const { fullName, nickName, urlAvatar } = req.body;
       if (!fullName || !nickName) {
         return res.status(400).json({
           message: "Vui lòng điền đủ thông tin"
         });
       }
-      User.updateInfo(user.username, fullName, nickName, res);
+      User.updateInfo(user.username, fullName, nickName, urlAvatar, res);
     }
   })(req, res, next);
 };
@@ -151,6 +154,35 @@ exports.change_password = (req, res, next) => {
         oldPassword,
         res
       );
+    }
+  })(req, res, next);
+};
+
+exports.update_point_and_rank = (req, res, next) => {
+  passport.authenticate("jwt", { session: false }, async (err, user, info) => {
+    if (err) {
+      console.log(err);
+      return res.status(400).json({
+        error: err
+      });
+    }
+
+    if (info) {
+      console.log(info);
+      return res.status(400).json({
+        message: info.message
+      });
+    } else {
+      const { newRank, newPoint, newNumberNegativePoint } = req.body;
+      console.log(user.username);
+      if (newRank === '' || newPoint === null || newNumberNegativePoint === null) {
+        console.log(newRank, newPoint, newNumberNegativePoint);
+        console.log("Chưa điền đủ thông tin");
+        return res.status(400).json({
+          message: "Vui lòng điền đủ thông tin"
+        });
+      }
+      User.updatePointAndRank(user.username ,newRank, newPoint, newNumberNegativePoint, res);
     }
   })(req, res, next);
 };
