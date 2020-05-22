@@ -87,11 +87,21 @@ function changeRankToNumber(rank){
   }
 }
 //Socket server
+const User = require("./models/user-model")
 var arrRanking = [];
 var arrUserWait = [];
 var count = 0;
-app.io.on('connection', function(socket){
+app.io.on('connection', async(socket) => {
   console.log(`Có người vừa truy cập: ${socket.id}`);
+  if(arrRanking.length === 0){
+    arrRanking = await User.listRanking.find({});
+    arrRanking.sort(function(a, b){
+      if(changeRankToNumber(a.rank) === changeRankToNumber(b.rank)){
+        return b.point - a.point;
+      }
+      return changeRankToNumber(b.rank) - changeRankToNumber(a.rank);
+    });
+  }
   io.sockets.emit('server-send-array-ranking', arrRanking);
   socket.on('disconnect', function(){
     var index = arrUserWait.findIndex(function(item, i){
@@ -156,18 +166,23 @@ app.io.on('connection', function(socket){
     io.sockets.in(socket.RoomName).emit('server-send-play-again', socket.Username);
   });
   // Gửi điểm và hạng sau khi cập nhật
-  socket.on('user-send-point-and-rank', function(data){
+  socket.on('user-send-point-and-rank', async(data) =>{
     console.log('Cập nhật điểm và hạng');
+    if(arrRanking.length === 0){
+      arrRanking = await User.listRanking.find({});
+    }
     let flag = 0;
     for(let i=0; i<arrRanking.length; i++){
       if(arrRanking[i].username === data.username){
         arrRanking[i] = data;
+        User.updattePointAndRankOfListRanking(data.username, data.rank, data.point, data.numberNegativePoint);
         flag = 1;
         break;
       }
     }
     if(flag === 0){
       arrRanking.push(data);
+      User.addNewUserToListRanking(data);
     }
     arrRanking.sort(function(a, b){
       if(changeRankToNumber(a.rank) === changeRankToNumber(b.rank)){
@@ -176,6 +191,11 @@ app.io.on('connection', function(socket){
       return changeRankToNumber(b.rank) - changeRankToNumber(a.rank);
     });
     if(arrRanking.length > 10){
+      User.listRanking.findByIdAndRemove({'username': arrRanking[10].username}, function(err, doc){
+        if(err){
+          console.log(err);
+        }
+      });
       arrRanking.pop();
     }
     io.sockets.emit('server-send-array-ranking', arrRanking);

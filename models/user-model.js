@@ -36,9 +36,11 @@ var user = new Schema({
     type: String,
     default: ''
   }
-}, { collection: 'users' });
+});
 
-const list = mongoose.model('users', user);
+
+const list = mongoose.model('users', user, 'users');
+const listRanking = mongoose.model('ranking', user, 'ranking');
 
 const saveUser = async (user) => {
   const newUser = new list(user);
@@ -150,15 +152,46 @@ const updatePointAndRank = async (username, newRank, newPoint, newNumberNegative
                                   message: 'Cập điểm và hạng thành công'
                                 });
   });
+
+  
+};
+
+const updattePointAndRankOfListRanking =  async(username, newRank, newPoint, newNumberNegativePoint) => {
+  const query = {'username': username};
+  let set;
+  set = { rank: newRank, point: newPoint, numberNegativePoint: newNumberNegativePoint };
+  await listRanking.findOneAndUpdate(query, 
+                              {$set: set}, 
+                              {upsert: true}, 
+                              function(err, doc){
+                                if(err){
+                                  console.log(err);
+                                }
+  });
+}
+
+const addNewUserToListRanking = (user) => {
+  const newUser = new listRanking(user);
+  newUser.save(function (err) {
+    if (err) {
+      console.log(err);
+      return false;
+    } else {
+      return true;
+    }
+  });
 };
 
 
 module.exports = {
   list: list,
+  listRanking: listRanking,
   saveUser: saveUser,
   validPassword: validPassword,
   checkUsername: checkUsername,
   updateInfo: updateInfo,
   changePassword: changePassword,
-  updatePointAndRank
+  updatePointAndRank,
+  addNewUserToListRanking,
+  updattePointAndRankOfListRanking
 };

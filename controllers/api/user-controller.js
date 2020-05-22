@@ -6,6 +6,7 @@ const User = require("../../models/user-model"),
 exports.user_login_process = (req, res, next) => {
   const { username, password } = req.body;
 
+  console.log(username, password);
   if (!username || !password) {
     return res.status(400).json({
       message: "Vui lòng điền đủ thông tin"
