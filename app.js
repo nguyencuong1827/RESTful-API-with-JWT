@@ -210,6 +210,10 @@ app.io.on('connection', async(socket) => {
     io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn); 
     socket.leave(socket.RoomName);
   });
+  socket.on('child-send-location', function(data){
+    console.log(data);
+    socket.emit('server-send-location-of-child', data);
+  });
 });
 
 app.use(cors());
