@@ -92,23 +92,21 @@ var arrRanking = [];
 var arrUserWait = [];
 var count = 0;
 app.io.on('connection', async(socket) => {
-  console.log(`Có người vừa truy cập: ${socket.id}`);
-  if(arrRanking.length === 0){
-    arrRanking = await User.listRanking.find({});
-    arrRanking.sort(function(a, b){
-      if(changeRankToNumber(a.rank) === changeRankToNumber(b.rank)){
-        return b.point - a.point;
-      }
-      return changeRankToNumber(b.rank) - changeRankToNumber(a.rank);
-    });
-  }
+  // console.log(`Có người vừa truy cập: ${socket.id}`);
+  arrRanking = await User.listRanking.find({});
+  arrRanking.sort(function(a, b){
+    if(changeRankToNumber(a.rank) === changeRankToNumber(b.rank)){
+      return b.point - a.point;
+    }
+    return changeRankToNumber(b.rank) - changeRankToNumber(a.rank);
+  });
   io.sockets.emit('server-send-array-ranking', arrRanking);
   socket.on('disconnect', function(){
     var index = arrUserWait.findIndex(function(item, i){
       return item.id === socket.id;
     });
     arrUserWait.splice(index, 1);
-    console.log(`${socket.Username ? socket.Username : socket.id} vừa thoát`);
+    // console.log(`${socket.Username ? socket.Username : socket.id} vừa thoát`);
     io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn);
   });
   socket.on('user-send-info', function(data){
@@ -118,19 +116,19 @@ app.io.on('connection', async(socket) => {
     socket.RoomName = data.Username;
     socket.Rank = data.Rank;
     socket.urlAvatar = data.urlAvatar;
-    console.log( socket.Username);
-    console.log("Điểm: " + socket.Point);
+    // console.log( socket.Username);
+    // console.log("Điểm: " + socket.Point);
 
     const length = arrUserWait.length;
     if(length >= 1){
-        
+
       socket.join(arrUserWait[length-1].RoomName);
       socket.RoomName = arrUserWait[length-1].RoomName;
       socket.YourTurn = 'O';
       arrUserWait.push({id: socket.id, Username: socket.Username, NickName: socket.NickName, Point: socket.Point, RoomName: socket.RoomName, Rank: socket.Rank, urlAvatar: socket.urlAvatar, YourTurn: socket.YourTurn});
       io.sockets.in(socket.RoomName).emit('server-send-ready-play', 'Đã tạo phòng');
       io.sockets.in(socket.RoomName).emit('server-send-info-user', arrUserWait);
-      arrUserWait = [];                       
+      arrUserWait = [];
     }
     else{
       socket.YourTurn = 'X';
@@ -141,23 +139,23 @@ app.io.on('connection', async(socket) => {
 
   socket.on('user-send-position-move', function(data){
     socket.to(socket.RoomName).emit('server-send-position-move', data);
-    //io.sockets.in(socket.RoomName).emit('server-send-position-move', data); 
+    //io.sockets.in(socket.RoomName).emit('server-send-position-move', data);
   });
-  
+
   socket.on('user-send-please-return', function(){
     io.sockets.in(socket.RoomName).emit('server-send-please-return', socket.Username);
   });
   socket.on('user-send-allow', function(){
-    io.sockets.in(socket.RoomName).emit('server-send-allow'); 
+    io.sockets.in(socket.RoomName).emit('server-send-allow');
   });
   socket.on('user-send-not-allow', function(){
-    io.sockets.in(socket.RoomName).emit('server-send-not-allow', socket.Username); 
+    io.sockets.in(socket.RoomName).emit('server-send-not-allow', socket.Username);
   });
   socket.on('user-send-give-up', function(){
-    console.log(socket.YourTurn);
+    // console.log(socket.YourTurn);
     io.sockets.in(socket.RoomName).emit('server-send-give-up', {Username: socket.Username, NickName: socket.NickName, YourTurn: socket.YourTurn});
   });
-  
+
   socket.on('user-send-message', function(data){
     io.sockets.in(socket.RoomName).emit('server-send-message', {Username: socket.Username, Message: data});
   });
@@ -167,7 +165,7 @@ app.io.on('connection', async(socket) => {
   });
   // Gửi điểm và hạng sau khi cập nhật
   socket.on('user-send-point-and-rank', async(data) =>{
-    console.log('Cập nhật điểm và hạng');
+    // console.log('Cập nhật điểm và hạng');
     if(arrRanking.length === 0){
       arrRanking = await User.listRanking.find({});
     }
@@ -199,19 +197,19 @@ app.io.on('connection', async(socket) => {
       arrRanking.pop();
     }
     io.sockets.emit('server-send-array-ranking', arrRanking);
-    console.log('Bảng xếp hạng', data.username);
-    console.log(arrRanking.length);
+    // console.log('Bảng xếp hạng', data.username);
+    // console.log(arrRanking.length);
     // console.log(arrRanking);
 
   });
   socket.on('user-send-quit-room', function(){
-    console.log(socket.NickName, " đã thoát khỏi phòng ", socket.RoomName);
+    // console.log(socket.NickName, " đã thoát khỏi phòng ", socket.RoomName);
     arrUserWait = [];
-    io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn); 
+    io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn);
     socket.leave(socket.RoomName);
   });
   socket.on('child-send-location', function(data){
-    console.log(data);
+    // console.log(data);
     socket.emit('server-send-location-of-child', data);
   });
 });

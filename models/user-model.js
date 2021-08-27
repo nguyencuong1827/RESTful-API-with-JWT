@@ -72,7 +72,7 @@ const validPassword = async (username, password) => {
 const checkUsername = async (username) => {
   const user = await list.findOne({ 'username': username });
   if (!user)
-    return false; 
+    return false;
   return true;
 };
 
@@ -85,9 +85,14 @@ const updateInfo = async (username ,fullName, nickName, urlAvatar,  res) => {
   else{
     set = { fullName: fullName, nickName: nickName, urlAvatar: urlAvatar };
   }
-  await list.findOneAndUpdate(query, 
-                              {$set: set}, 
-                              {upsert: true}, 
+
+  await listRanking.findOneAndUpdate(query, {$set: set}, {useFindAndModify: false},  function(err, doc){
+    console.log({err})
+  });
+
+  await list.findOneAndUpdate(query,
+                              {$set: set},
+                              {upsert: true},
                               function(err, doc){
                                 if(err){
                                   return res.status(400).json({
@@ -103,13 +108,13 @@ const updateInfo = async (username ,fullName, nickName, urlAvatar,  res) => {
 const changePassword = async (username, password, newPassword, oldPassword, res) => {
   const query = {'username': username};
   const compare = await bcrypt.compare(oldPassword, password);
-  
+
   if(!compare){
     return res.status(400).json({
       message: 'Mật khẩu cũ không chính xác'
     });
   }
-  
+
   bcrypt.genSalt(10, function (err, salt) {
       bcrypt.hash(newPassword, salt, async (err, hash) => {
         if (err) {
@@ -117,9 +122,9 @@ const changePassword = async (username, password, newPassword, oldPassword, res)
             error: err
           });
         }
-      await list.findOneAndUpdate(query, 
-        {$set: {password: hash}}, 
-        {upsert: true}, 
+      await list.findOneAndUpdate(query,
+        {$set: {password: hash}},
+        {upsert: true},
         function(err, doc){
           if(err){
             return res.status(400).json({
@@ -138,9 +143,9 @@ const updatePointAndRank = async (username, newRank, newPoint, newNumberNegative
   const query = {'username': username};
   let set;
   set = { rank: newRank, point: newPoint, numberNegativePoint: newNumberNegativePoint };
-  await list.findOneAndUpdate(query, 
-                              {$set: set}, 
-                              {upsert: true}, 
+  await list.findOneAndUpdate(query,
+                              {$set: set},
+                              {upsert: true},
                               function(err, doc){
                                 if(err){
                                   console.log(err);
@@ -153,16 +158,16 @@ const updatePointAndRank = async (username, newRank, newPoint, newNumberNegative
                                 });
   });
 
-  
+
 };
 
 const updattePointAndRankOfListRanking =  async(username, newRank, newPoint, newNumberNegativePoint) => {
   const query = {'username': username};
   let set;
   set = { rank: newRank, point: newPoint, numberNegativePoint: newNumberNegativePoint };
-  await listRanking.findOneAndUpdate(query, 
-                              {$set: set}, 
-                              {upsert: true}, 
+  await listRanking.findOneAndUpdate(query,
+                              {$set: set},
+                              {upsert: true},
                               function(err, doc){
                                 if(err){
                                   console.log(err);
