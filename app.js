@@ -173,7 +173,7 @@ app.io.on('connection', async(socket) => {
     for(let i=0; i<arrRanking.length; i++){
       if(arrRanking[i].username === data.username){
         arrRanking[i] = data;
-        User.updattePointAndRankOfListRanking(data.username, data.rank, data.point, data.numberNegativePoint);
+        await User.updatePointAndRankOfListRanking(data.username, data.rank, data.point, data.numberNegativePoint);
         flag = 1;
         break;
       }
@@ -202,12 +202,19 @@ app.io.on('connection', async(socket) => {
     // console.log(arrRanking);
 
   });
-  socket.on('user-send-quit-room', function(){
+  socket.on('user-send-cancel_find_match', function(){
     // console.log(socket.NickName, " đã thoát khỏi phòng ", socket.RoomName);
+    arrUserWait = [];
+    socket.leave(socket.RoomName);
+  });
+
+  socket.on('user-send-quit-room', function(){
     arrUserWait = [];
     io.sockets.in(socket.RoomName).emit('server-send-have-user-quit', socket.YourTurn);
     socket.leave(socket.RoomName);
   });
+
+
   socket.on('child-send-location', function(data){
     // console.log(data);
     socket.emit('server-send-location-of-child', data);

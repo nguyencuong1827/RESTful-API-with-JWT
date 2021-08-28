@@ -1,6 +1,6 @@
-var mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-var Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
+const Schema = mongoose.Schema
 
 var user = new Schema({
   id: String,
@@ -161,7 +161,7 @@ const updatePointAndRank = async (username, newRank, newPoint, newNumberNegative
 
 };
 
-const updattePointAndRankOfListRanking =  async(username, newRank, newPoint, newNumberNegativePoint) => {
+const updatePointAndRankOfListRanking =  async(username, newRank, newPoint, newNumberNegativePoint) => {
   const query = {'username': username};
   let set;
   set = { rank: newRank, point: newPoint, numberNegativePoint: newNumberNegativePoint };
@@ -198,5 +198,5 @@ module.exports = {
   changePassword: changePassword,
   updatePointAndRank,
   addNewUserToListRanking,
-  updattePointAndRankOfListRanking
+  updatePointAndRankOfListRanking
 };
